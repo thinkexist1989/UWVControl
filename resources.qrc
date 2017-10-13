@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="loadingImage">res/loading.png</file>
+        <file alias="uwv">res/uwv.png</file>
+    </qresource>
+</RCC>
