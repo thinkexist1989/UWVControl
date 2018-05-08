@@ -452,7 +452,7 @@ void ControlView::on_orien_ctrl_btn_clicked()
 
 void ControlView::on_down_pressed()
 {
-    g::Fz = 120;
+    g::Fz = 200;
     Vector6f T;
     T << g::Fx, g::Fy, g::Fz, g::Tx, g::Ty, g::Tz;
     Vector8f f = ThrustAllocation(T);
@@ -510,17 +510,29 @@ void ControlView::OrientationControl()
     float fytemp = 0;
 
     //if(abs(rdp - g::roll) > 45){
-    if(rdp >= 70){
-        RollPID.setKp(0.5);
-        RollPID.setKi(0.05);
-        RollPID.setKd(0.1);
+    if(abs(rdp) >= 70){
+        RollPID.setKp(2);
+        RollPID.setKi(0.0);
+        RollPID.setKd(1);
+        RollPID.setErrorThreshold(15);
         RollPID.setOutputLowerLimit(-TXMAX);
         RollPID.setOutputUpperLimit(TXMAX);
 
-        if(g::roll >= 60)
-            fytemp = -170;
+        if(abs(g::roll) >= 75){
+        PitchPID.setOutputLowerLimit(-87);
+        PitchPID.setOutputUpperLimit(87);
+        }
+
+        if(g::roll >= 50){
+           // std::cout << "OK1" << std::endl;
+            g::Fy = -170;
+        }
+        else if(g::roll <= -50){
+            std::cout << "OK2" << std::endl;
+            g::Fy = 170;
+        }
         else
-            fytemp = 0;
+            g::Fy = 0;
     }
     else{
         RollPID.setKp(ui->rp->value());
@@ -528,6 +540,7 @@ void ControlView::OrientationControl()
         RollPID.setKd(ui->rd->value());
         RollPID.setOutputLowerLimit(-TXMAX/3.0);
         RollPID.setOutputUpperLimit(TXMAX/3.0);
+        g::Fy = 0;
     }
 
     g::Tx = RollPID.refresh(g::roll);
@@ -535,7 +548,9 @@ void ControlView::OrientationControl()
 
 
     Vector6f T;
-    T << g::Fx, g::Fy+fytemp, g::Fz, g::Tx, g::Ty, g::Tz;
+    T << g::Fx, g::Fy, g::Fz, g::Tx, g::Ty, g::Tz;
+
+    std::cout << g::Fy << std::endl;
     Vector8f f = ThrustAllocation(T);
     for(int i = 0; i < 8; i++){
        // g::motorvec[i].pwm = T2P(f(i),g::motorvec[i].dir) > 99.99 ? 99.99:T2P(f(i),g::motorvec[i].dir);
@@ -604,7 +619,7 @@ void ControlView::on_turnleft_clicked()
     }
 
     if(bPosCtrl){
-      //  on_pos_ctrl_btn_clicked();
+        on_pos_ctrl_btn_clicked();
     }
 }
 
@@ -616,6 +631,6 @@ void ControlView::on_turnright_clicked()
     }
 
     if(bPosCtrl){
-     //   on_pos_ctrl_btn_clicked();
+        on_pos_ctrl_btn_clicked();
     }
 }
