@@ -45,8 +45,8 @@ target_wrapper.*
 # QtCtreator CMake
 CMakeLists.txt.user*
 
-/debug/
-/Eigen/
-/HCNetSKD/
-/NBaseUiKit/
-/opencv/
+debug/
+!Eigen/*
+!HCNetSDK/*
+!NBaseUiKit/*
+!opencv/*
