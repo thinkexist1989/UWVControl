@@ -7,7 +7,7 @@
 PlatformView::PlatformView(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::PlatformView),
-    bfirst(false),bNewdata(false),bisfeed(false)
+    bfirst(false),bNewdata(false),bisfeed(false),realtimerecording(false)
 {
     ui->setupUi(this);
 
@@ -36,6 +36,14 @@ void PlatformView::Update()
     ui->pos_x2->setValue(g::CurrentPosition1);
     ui->pos_y2->setValue(g::CurrentPosition2);
     ui->pos_z2->setValue(g::CurrentPosition3);
+
+    if(realtimerecording){                      //start record realtime platfrom position
+        Pos t;
+        t.x = g::CurrentPosition1;
+        t.y = g::CurrentPosition2;
+        t.z = g::CurrentPosition3;
+        realtimeposvec.push_back(t);
+    }
 
     if(bfirst == false){
         bfirst = true;
@@ -436,5 +444,48 @@ void PlatformView::on_checkwirefeed_clicked()
     else if(ui->checkwirefeed->checkState() == Qt::Unchecked){
         bisfeed = false;
         std::cout << "check is not feeding" << std::endl;
+    }
+}
+
+/***********三轴平台实时位置记录**************/
+void PlatformView::on_record_realtime_pos_clicked()
+{
+    if(realtimerecording){
+        realtimerecording = false;
+        int m = realtimeposvec.size();
+        if(m != 0){
+            NBaseToastr * msg = new NBaseToastr(this, "请保存数据");
+            msg->toastr();
+
+            QString fileName = QFileDialog::getSaveFileName(this,QString::fromLocal8Bit("Save Files"),"",tr("TXT Files(*.txt);;All Files(*.*)"));
+            if(!fileName.isNull()){
+                int i=0;
+                QFile data(fileName);
+                if(data.open(QFile::WriteOnly | QFile::Truncate | QFile::Text)){
+                    QTextStream out(&data);
+                    for(i;i<m;i++){
+                        out << realtimeposvec[i].x << "," << realtimeposvec[i].y << "," << realtimeposvec[i].z << "\n";
+                    }
+                }
+            }
+            std::vector<Pos> tempvec;
+            realtimeposvec.swap(tempvec);
+        }
+        else{
+            NBaseToastr * msg = new NBaseToastr(this, "未记录到任何数据");
+            msg->toastr();
+        }
+
+        ui->record_realtime_pos->setStyleSheet("background-color:rgb(0,255,0)");
+        ui->record_realtime_pos->setText("REC RTPos");
+    }
+
+    else{
+        realtimerecording = true;
+        ui->record_realtime_pos->setStyleSheet("background-color:rgb(255,0,0)");
+        ui->record_realtime_pos->setText("Stop");
+        NBaseToastr * msg = new NBaseToastr(this, "开始实时记录平台位置数据");
+        msg->toastr();
+
     }
 }

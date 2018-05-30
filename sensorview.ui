@@ -511,6 +511,22 @@
         </property>
        </widget>
       </item>
+      <item row="3" column="6">
+       <widget class="QPushButton" name="rec_sensor_data">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(0, 255, 0);</string>
+        </property>
+        <property name="text">
+         <string>REC Sensor Data</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -669,9 +685,19 @@
      <property name="title">
       <string>Light-0x07</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_4" rowstretch="0" columnstretch="3,3,2,3,3,3,2">
+     <layout class="QGridLayout" name="gridLayout_4" rowstretch="0" columnstretch="3,3,2,3,3,3,2,0">
       <item row="0" column="1">
        <widget class="QLineEdit" name="ld_light_1">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="QLineEdit" name="ld_light_2">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>0</horstretch>
@@ -690,16 +716,6 @@
         </property>
         <property name="text">
          <string>Light_2</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="QLineEdit" name="ld_light_2">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
         </property>
        </widget>
       </item>
@@ -736,7 +752,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="6">
+      <item row="0" column="6" colspan="2">
        <widget class="QPushButton" name="ligh_set_btn_2">
         <property name="text">
          <string>Set</string>

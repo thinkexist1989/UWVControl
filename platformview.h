@@ -34,11 +34,13 @@ public:
     interpolation Inter;
     std::vector<Pos> posvec;
     std::vector<Pos> readposvec;
+    std::vector<Pos> realtimeposvec;
 
     QTimer * t;
 
     bool bNewdata;
     bool bisfeed;
+
 private:
     Ui::PlatformView *ui;
 
@@ -52,6 +54,7 @@ private:
     BOOL m_bIsLogin;
     BOOL m_bIsPlay;
 
+    bool realtimerecording;
     bool bfirst;
     int rit = 1;
     bool buttonflag = false;
@@ -87,6 +90,7 @@ private slots:
     void on_reset_clicked();
     void on_start_point_clicked();
     void on_checkwirefeed_clicked();
+    void on_record_realtime_pos_clicked();
 };
 
 #endif // PLATFORMVIEW_H
