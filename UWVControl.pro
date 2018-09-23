@@ -72,3 +72,5 @@ OTHER_FILES +=
 
 RESOURCES += \
     resources.qrc
+
+RC_ICONS = res/control.ico

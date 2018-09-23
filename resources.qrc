@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file alias="loadingImage">res/loading.png</file>
         <file alias="uwv">res/uwv.png</file>
+        <file alias="ico">res/control.ico</file>
     </qresource>
 </RCC>
