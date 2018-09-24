@@ -25,10 +25,14 @@
 #define TYMAX 110
 #define TZMAX 87.3
 
+#define CTRL_PID 0
+#define CTRL_MPID 1
+#define CTRL_SMC 2
+
 ControlView::ControlView(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::ControlView),
-    bOrienCtrl(false),bPosCtrl(false)
+    bOrienCtrl(false),bPosCtrl(false),ctrlAlgrthm(CTRL_PID),datarecording(false)
 {
     ui->setupUi(this);
 
@@ -75,10 +79,20 @@ ControlView::ControlView(QWidget *parent) :
     Matrix86f temp;
     temp << V1.transpose(),V2.transpose(),V3.transpose(),V4.transpose(),V5.transpose(),V6.transpose(),V7.transpose(),V8.transpose();
     g::K = temp.transpose();
-    std::cout << "K is : \n" << g::K << std::endl;
+   // std::cout << "K is : \n" << g::K << std::endl;
 
     g::K_star = g::K.transpose()*(g::K*g::K.transpose()).inverse();
-    std::cout << "K_star is : \n" << g::K_star << std::endl;
+   // std::cout << "K_star is : \n" << g::K_star << std::endl;
+
+    float m = 100.336;
+    g::M << m,      0,      0,      0,            0,            0,
+            0,      m,      0,      0,            0,            0,
+            0,      0,      m,      0,            0,            0,
+            0,      0,      0,      5.268,  -0.2584,      0.08056,
+            0,      0,      0,    -0.2584,    11.08,      0.01954,
+            0,      0,      0,    0.08056,  0.01954,        12.95;
+
+
 
 }
 
@@ -249,6 +263,51 @@ Matrix66f ControlView::GetJ(float roll, float pitch)
                   0          ,                               0                 ,                               0                   ,       0 ,         sin(phi)/cos(theta)  ,       cos(phi)/cos(theta);
 
     return J;
+}
+
+Vector6f ControlView::GetG(float roll, float pitch)
+{
+    float phi = roll*PI/180.0; float theta = pitch*PI/180.0; float psi = 0;
+    float WW = 100.336;
+    float BB = 103;
+    Vector3f CG = GetCG();
+    float x_g = CG(0); float y_g = CG(1); float z_g = CG(2);
+
+    Vector3f CB = GetCB();
+    float x_b = CB(0); float y_b = CB(1); float z_b = CB(2);
+
+    Vector6f G;
+    G << -(WW-BB)*sin(theta),
+          (WW-BB)*cos(theta)*sin(phi),
+          (WW-BB)*cos(theta)*cos(phi),
+          (y_g*WW-y_b*BB)*cos(theta)*cos(phi)-(z_g*WW-z_b*BB)*cos(theta)*sin(phi),
+         -(z_g*WW-z_b*BB)*sin(theta)-(x_g*WW-x_b*BB)*cos(theta)*cos(phi),
+          (x_g*WW-x_b*BB)*cos(theta)*sin(phi)+(y_g*WW-y_b*BB)*sin(theta);
+
+    return G;
+}
+
+Vector3f ControlView::GetCB()
+{
+    Vector3f rB;
+    rB << 0,0,0;
+    return  rB;
+}
+
+Vector3f ControlView::GetCG()
+{
+    Vector3f ryG,rxG, rzG;
+    float xc = 0.0735; float yc = 0.0445; float zc = 0.228;
+    float mx = 4; float my = 4; float mz = 2; float mr = 90.336;
+    float iy = 0; float jy = 0; float ky = -0.1;
+    float X = g::CurrentPosition1; float Y = g::CurrentPosition2; float Z = g::CurrentPosition3;
+    ryG << iy  ,    jy, ky;
+    rxG << iy  ,  Y+jy, ky+(xc+yc)/2;
+    rzG << X+iy,  Y+jy, ky+xc+(yc+zc)/2;
+
+    Vector3f rG = (mx*rxG +my*ryG + mz*rzG)/(mr+mx+my+mz);
+    //std::cout << rG <<std::endl;
+    return rG;
 }
 
 
@@ -432,6 +491,7 @@ void ControlView::on_orien_ctrl_btn_clicked()
         ot = new QTimer(this);
         connect(ot,SIGNAL(timeout()),this,SLOT(OrientationControl()));
         ot->start(250);
+        ui->orien_ctrl_btn->setStyleSheet("background-color:rgb(255,0,0)");
         ui->orien_ctrl_btn->setText("Stop");
         bOrienCtrl = true;
     }
@@ -443,6 +503,7 @@ void ControlView::on_orien_ctrl_btn_clicked()
         }
         SendMotorSpeed();
         g::Tx = 0; g::Ty = 0;
+        ui->orien_ctrl_btn->setStyleSheet("background-color:rgb(0,255,0)");
         ui->orien_ctrl_btn->setText("Start");
         bOrienCtrl = false;
 
@@ -502,55 +563,90 @@ void ControlView::on_up_released()
 
 void ControlView::OrientationControl()
 {
-    float rdp = ui->roll_ctrl->value();
-    float pdp = ui->pitch_ctrl->value();
-    RollPID.setDesiredPoint(ui->roll_ctrl->value());
-    PitchPID.setDesiredPoint(ui->pitch_ctrl->value());
+    switch(ctrlAlgrthm){
+    case CTRL_PID:{
+        float rdp = ui->roll_ctrl->value();
+        float pdp = ui->pitch_ctrl->value();
+        RollPID.setDesiredPoint(ui->roll_ctrl->value());
+        PitchPID.setDesiredPoint(ui->pitch_ctrl->value());
+        //add z control
+        ZPID.setDesiredPoint(ui->z_ctrl->value()*1000);
+        g::Fz = ZPID.refresh(g::deep);
 
-    float fytemp = 0;
+        float fytemp = 0;
 
-    //if(abs(rdp - g::roll) > 45){
-    if(abs(rdp) >= 70){
-        RollPID.setKp(2);
-        RollPID.setKi(0.0);
-        RollPID.setKd(1);
-        RollPID.setErrorThreshold(15);
-        RollPID.setOutputLowerLimit(-TXMAX);
-        RollPID.setOutputUpperLimit(TXMAX);
+        //if(abs(rdp - g::roll) > 45){
+        if(abs(rdp) >= 70){
+            RollPID.setKp(2);
+            RollPID.setKi(0.0);
+            RollPID.setKd(1);
+            RollPID.setErrorThreshold(15);
+            RollPID.setOutputLowerLimit(-TXMAX);
+            RollPID.setOutputUpperLimit(TXMAX);
 
-        if(abs(g::roll) >= 75){
-        PitchPID.setOutputLowerLimit(-87);
-        PitchPID.setOutputUpperLimit(87);
+            if(abs(g::roll) >= 75){
+            PitchPID.setOutputLowerLimit(-87);
+            PitchPID.setOutputUpperLimit(87);
+            }
+
+            if(g::roll >= 50){
+               // std::cout << "OK1" << std::endl;
+                g::Fy = -170;
+            }
+            else if(g::roll <= -50){
+                std::cout << "OK2" << std::endl;
+                g::Fy = 170;
+            }
+            else
+                g::Fy = 0;
         }
-
-        if(g::roll >= 50){
-           // std::cout << "OK1" << std::endl;
-            g::Fy = -170;
-        }
-        else if(g::roll <= -50){
-            std::cout << "OK2" << std::endl;
-            g::Fy = 170;
-        }
-        else
+        else{
+            RollPID.setKp(ui->rp->value());
+            RollPID.setKi(ui->ri->value());
+            RollPID.setKd(ui->rd->value());
+            RollPID.setOutputLowerLimit(-TXMAX/3.0);
+            RollPID.setOutputUpperLimit(TXMAX/3.0);
             g::Fy = 0;
-    }
-    else{
-        RollPID.setKp(ui->rp->value());
-        RollPID.setKi(ui->ri->value());
-        RollPID.setKd(ui->rd->value());
-        RollPID.setOutputLowerLimit(-TXMAX/3.0);
-        RollPID.setOutputUpperLimit(TXMAX/3.0);
-        g::Fy = 0;
-    }
+        }
 
-    g::Tx = RollPID.refresh(g::roll);
-    g::Ty = PitchPID.refresh(g::pitch);
+        g::Tx = RollPID.refresh(g::roll);
+        g::Ty = PitchPID.refresh(g::pitch);
+    }
+        break;
+    case CTRL_MPID:{
+        Vector6f derror;
+        derror << 0, 0, (g::ddeep - 0), (g::droll- 0), (g::dpitch-0), 0;
+        Vector6f error;
+        error << 0,0,(g::deep - ui->z_ctrl->value()), (g::roll- ui->roll_ctrl->value()), (g::pitch-ui->pitch_ctrl->value()), 0;
+
+        float PVAL = -10;
+        float DVAL = -2;
+
+        Vector6f tau;
+        tau = -GetG(g::roll,g::pitch)+ PVAL*error+DVAL*derror;
+
+
+        g::Fx = tau(0);
+        g::Fy = tau(1);
+        g::Fz = tau(2);
+        g::Tx = tau(3);
+        g::Ty = tau(4);
+        g::Tz = tau(5);
+    }
+        break;
+    case CTRL_SMC:{
+
+    }
+        break;
+    default:
+        break;
+    }
 
 
     Vector6f T;
     T << g::Fx, g::Fy, g::Fz, g::Tx, g::Ty, g::Tz;
 
-    std::cout << g::Fy << std::endl;
+    //std::cout << g::Fy << std::endl;
     Vector8f f = ThrustAllocation(T);
     for(int i = 0; i < 8; i++){
        // g::motorvec[i].pwm = T2P(f(i),g::motorvec[i].dir) > 99.99 ? 99.99:T2P(f(i),g::motorvec[i].dir);
@@ -594,6 +690,7 @@ void ControlView::on_pos_ctrl_btn_clicked()
         pt = new QTimer(this);
         connect(pt,SIGNAL(timeout()),this,SLOT(PositionControl()));
         pt->start(200);
+        ui->pos_ctrl_btn->setStyleSheet("background-color:rgb(255,0,0)");
         ui->pos_ctrl_btn->setText("Stop");
         bPosCtrl = true;
     }
@@ -605,6 +702,7 @@ void ControlView::on_pos_ctrl_btn_clicked()
         }
         SendMotorSpeed();
         g::Fz = 0;
+        ui->pos_ctrl_btn->setStyleSheet("background-color:rgb(0,255,0)");
         ui->pos_ctrl_btn->setText("Start");
         bPosCtrl = false;
 
@@ -632,5 +730,36 @@ void ControlView::on_turnright_clicked()
 
     if(bPosCtrl){
         on_pos_ctrl_btn_clicked();
+    }
+}
+
+void ControlView::on_pidBtn_clicked()
+{
+    ctrlAlgrthm = CTRL_PID;
+    std::cout << "current algorithm is PID" << std::endl;
+}
+
+
+void ControlView::on_mpidBtn_clicked()
+{
+    ctrlAlgrthm = CTRL_MPID;
+    std::cout << "current algorithm is MPID" << std::endl;
+}
+
+void ControlView::on_smcBtn_clicked()
+{
+    ctrlAlgrthm = CTRL_SMC;
+    std::cout << "current algorithm is SMC" << std::endl;
+}
+
+void ControlView::on_isRec_stateChanged(int arg1)
+{
+    if(arg1 == Qt::Checked){
+        datarecording = true;
+        std::cout << "RECORD DATA" << std::endl;
+    }
+    else{
+        datarecording = false;
+        std::cout << "DO NOT RECORD DATA" << std::endl;
     }
 }

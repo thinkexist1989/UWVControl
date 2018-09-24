@@ -3,23 +3,7 @@
 
 #include <QWidget>
 #include <QFileDialog>
-
-struct RECXsensData
-{
-  float roll;
-  float pitch;
-  float yaw;
-};
-
-struct RECAltData
-{
-  float alt1_distance;
-  float alt1_energy;
-  float alt1_correlation;
-  float alt2_distance;
-  float alt2_energy;
-  float alt2_correlation;
-};
+#include "g.h"
 
 namespace Ui {
 class SensorView;

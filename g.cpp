@@ -17,6 +17,18 @@ float g::roll = 0;
 float g::pitch = 0;
 float g::yaw = 0;
 
+float g::roll_pre = 0;
+float g::pitch_pre = 0;
+float g::yaw_pre = 0;
+
+float g::droll = 0;
+float g::dpitch = 0;
+float g::dyaw = 0;
+
+float g::droll_pre = 0;
+float g::dpitch_pre = 0;
+float g::dyaw_pre = 0;
+
 /***    can    ***/
 std::vector<Motor> g::motorvec(8);
 float g::cabin_temp;
@@ -44,6 +56,10 @@ float g::pressval; // pressure value
 float g::tempval;  // tempreture value
 float g::deep;
 
+float g::deep_pre;
+float g::ddeep;
+float g::ddeep_pre;
+
 /******light******/
 short int g::brightness[2]; //current brightness value from 0 to 76==> 0x00 ~ 0x4c
 short int g::lighttemp[2];
@@ -66,6 +82,10 @@ float g::Fz = 0;
 float g::Tx = 0;
 float g::Ty = 0;
 float g::Tz = 0;
+
+Matrix66f g::M;
+Matrix66f g::C;
+Matrix66f g::G;
 
 /******position*******/
 float g::x = 0;

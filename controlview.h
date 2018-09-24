@@ -43,6 +43,18 @@ public:
     QTimer *pt;
 
     Matrix66f GetJ(float roll, float pitch);
+    Matrix66f GetC(float droll, float dpitch);
+    Vector6f GetG(float roll, float pitch);
+    Vector3f GetCB();
+    Vector3f GetCG();
+
+    int ctrlAlgrthm;
+
+    bool datarecording;
+
+    std::vector<RECXsensData> xsensdatavec;
+    std::vector<float> kellerdatavec;
+    std::vector<RECAltData> altdatavec;
 
 private:
     Ui::ControlView *ui;
@@ -75,6 +87,10 @@ private slots:
     void on_pos_ctrl_btn_clicked();
     void on_turnleft_clicked();
     void on_turnright_clicked();
+    void on_pidBtn_clicked();
+    void on_mpidBtn_clicked();
+    void on_smcBtn_clicked();
+    void on_isRec_stateChanged(int arg1);
 };
 
 #endif // CONTROLVIEW_H

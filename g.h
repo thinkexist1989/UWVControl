@@ -20,6 +20,10 @@
 #define TCP_SEND_LEN 50
 #define TCP_RECIEVE_LEN 50
 
+#define XSENS_STEP    0.1
+#define KELLER_STEP   0.1
+#define CONTROL_STEP  0.2
+
 
 #define ORD1_MOTOR             0x01
 #define ORD1_PLATFORM          0x02
@@ -80,6 +84,24 @@ struct InterStr
   float y;
 };
 
+struct RECXsensData
+{
+  float roll;
+  float pitch;
+  float yaw;
+};
+
+struct RECAltData
+{
+  float alt1_distance;
+  float alt1_energy;
+  float alt1_correlation;
+  float alt2_distance;
+  float alt2_energy;
+  float alt2_correlation;
+};
+
+
 class g
 {
 public:
@@ -94,6 +116,18 @@ public:
     static float roll;
     static float pitch;
     static float yaw;
+
+    static float roll_pre;
+    static float pitch_pre;
+    static float yaw_pre;
+
+    static float droll;
+    static float dpitch;
+    static float dyaw;
+
+    static float droll_pre;
+    static float dpitch_pre;
+    static float dyaw_pre;
 
     /******can******/
     static std::vector<Motor> motorvec;
@@ -122,6 +156,10 @@ public:
     static float tempval;  // tempreture value
     static float deep;
 
+    static float deep_pre;
+    static float ddeep;
+    static float ddeep_pre;
+
     /******light******/
     static short int brightness[2]; //current brightness value from 0 to 76==> 0x00 ~ 0x4c
     static short int lighttemp[2];
@@ -143,6 +181,10 @@ public:
     static float  Tx;
     static float  Ty;
     static float  Tz;
+
+    static Matrix66f M;
+    static Matrix66f C;
+    static Matrix66f G;
 
     /******position*******/
     static float x;

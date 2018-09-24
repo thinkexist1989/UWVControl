@@ -98,12 +98,25 @@ void TcpView::FrameAnalysis(char* recvbuf, int n)
              case ORD1_XSENS:
                  switch ((unsigned char)recvbuf[4]) {
                  case XSENS_DATA:
+                     //store the previous data to g::x_pre
+                     g::roll_pre = g::roll;
+                     g::pitch_pre = g::pitch;
+                     g::yaw_pre = g::yaw;
+
                      memcpy(&g::roll, &recvbuf[5], 4);
                      memcpy(&g::pitch, &recvbuf[9], 4);
                      memcpy(&g::yaw, &recvbuf[13], 4);
                      //fit to the underwater reference framework
                      g::pitch = -g::pitch;
                      g::yaw   = -g::yaw;
+
+                     g::droll_pre = g::droll;
+                     g::dpitch_pre = g::dpitch;
+                     g::dyaw_pre = g::dyaw;
+
+                     g::droll = (g::roll - g::roll_pre)/XSENS_STEP;
+                     g::dpitch = (g::pitch - g::pitch_pre)/XSENS_STEP;
+                     g::dyaw = (g::yaw - g::yaw_pre)/XSENS_STEP;
 
                     // std::cout <<"Recieved New Xsens Info" <<std::endl;
                      xcnt++;
@@ -123,8 +136,17 @@ void TcpView::FrameAnalysis(char* recvbuf, int n)
                  case KELLER_DATA:
                      memcpy(&g::pressval, &recvbuf[5], 4);
                      memcpy(&g::tempval, &recvbuf[9], 4);
+
+                     g::deep_pre = g::deep;
+
                      g::deep = 1000*10*g::pressval;
                      g::z = 1000*10*g::pressval;
+
+                     g::ddeep_pre = g::ddeep;
+
+                     g::ddeep = (g::deep - g::deep_pre)/KELLER_STEP;
+
+
                      kcnt++;
                      ui->ld_k_cnt->setText(QString::number(kcnt));
                      UpdateUI(ui->ld_k_w_1,&recvbuf[3],1);

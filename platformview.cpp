@@ -484,7 +484,7 @@ void PlatformView::on_record_realtime_pos_clicked()
         realtimerecording = true;
         ui->record_realtime_pos->setStyleSheet("background-color:rgb(255,0,0)");
         ui->record_realtime_pos->setText("Stop");
-        NBaseToastr * msg = new NBaseToastr(this, "开始实时记录平台位置数据");
+        NBaseToastr * msg = new NBaseToastr(this, "记录平台位置数据");
         msg->toastr();
 
     }

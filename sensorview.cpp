@@ -1,6 +1,5 @@
 #include "sensorview.h"
 #include "ui_sensorview.h"
-#include "g.h"
 #include <nbasetoastr.h>
 
 SensorView::SensorView(QWidget *parent) :
@@ -234,7 +233,7 @@ void SensorView::on_rec_sensor_data_clicked()
         sensordatarecording = true;
         ui->rec_sensor_data->setStyleSheet("background-color:rgb(255,0,0)");
         ui->rec_sensor_data->setText("Stop");
-        NBaseToastr * msg = new NBaseToastr(this, "开始记录传感器数据");
+        NBaseToastr * msg = new NBaseToastr(this, "记录传感器数据");
         msg->toastr();
     }
 }
