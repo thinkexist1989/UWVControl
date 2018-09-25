@@ -3,6 +3,8 @@
 #include <iostream>
 #include <QKeyEvent>
 
+#include <nbasetoastr.h>
+
 #define A     0.5
 #define B     0.17
 #define C     0.3
@@ -619,11 +621,18 @@ void ControlView::OrientationControl()
         Vector6f error;
         error << 0,0,(g::deep - ui->z_ctrl->value()), (g::roll- ui->roll_ctrl->value()), (g::pitch-ui->pitch_ctrl->value()), 0;
 
-        float PVAL = -10;
-        float DVAL = -2;
+//        float PVAL = -10;
+//        float DVAL = -2;
+        Vector6f PVAL; PVAL << -10,-10,-10,-10,-10,-10;
+        Vector6f DVAL; DVAL << -2,-2,-2,-2,-2,-2;
 
         Vector6f tau;
-        tau = -GetG(g::roll,g::pitch)+ PVAL*error+DVAL*derror;
+        Vector6f GG = -GetG(g::roll,g::pitch);
+
+        for(int i = 0; i<6;i++){
+            tau(i) = GG(i) + PVAL(i)*error(i)+DVAL(i)*derror(i);
+        }
+      //  tau = -GetG(g::roll,g::pitch)+ PVAL*error+DVAL*derror;
 
 
         g::Fx = tau(0);
@@ -635,7 +644,33 @@ void ControlView::OrientationControl()
     }
         break;
     case CTRL_SMC:{
+        Vector6f derror;
+        derror << 0, 0, (g::ddeep - 0), (g::droll- 0), (g::dpitch-0), 0;
+        Vector6f error;
+        error << 0,0,(g::deep - ui->z_ctrl->value()), (g::roll- ui->roll_ctrl->value()), (g::pitch-ui->pitch_ctrl->value()), 0;
 
+        Vector6f cc; cc << 0.1,0.1,0.1,0.1,0.1,0.1;
+        Vector6f ss;
+
+        for(int i = 0; i<6;i++){
+            ss(i) = cc(i)*derror(i) + error(i);
+        }
+
+        Vector6f tau;
+        Vector6f e; e << 10,10,10,10,10,10;
+        Vector6f k; k << 0.1,0.1,0.1,0.1,0.1,0.1;
+        Vector6f GG = -GetG(g::roll,g::pitch);
+
+        for(int i = 0; i<6;i++){
+            tau(i) = GG(i) - e(i)*ss(i)/abs(ss(i)) - k(i)*ss(i)/abs(ss(i));
+        }
+
+        g::Fx = tau(0);
+        g::Fy = tau(1);
+        g::Fz = tau(2);
+        g::Tx = tau(3);
+        g::Ty = tau(4);
+        g::Tz = tau(5);
     }
         break;
     default:
@@ -653,6 +688,36 @@ void ControlView::OrientationControl()
         g::motorvec[i].pwm = T2P(f(i),g::motorvec[i].dir);
     }
     SendMotorSpeed();
+
+    if(datarecording){                      //start record Altimeter data
+//        RECAltData t;
+//        t.alt1_distance = g::distance[0];
+//        t.alt1_energy = g::energy[0];
+//        t.alt1_correlation = g::correlation[0];
+//        t.alt2_distance = g::distance[1];
+//        t.alt2_energy = g::energy[1];
+//        t.alt2_correlation = g::correlation[1];
+//        altdatavec.push_back(t);
+
+        kellerdatavec.push_back(g::deep);
+
+        RECXsensData t;
+        t.roll = g::roll;
+        t.pitch = g::pitch;
+        t.yaw = g::yaw;
+        xsensdatavec.push_back(t);
+
+
+        RECCtrlData tt;
+        tt.fx = g::Fx; tt.fy = g::Fy; tt.fz = g::Fz; tt.tx = g::Tx; tt.ty = g::Ty; tt.tz = g::Tz;
+        ctrldatavec.push_back(tt);
+
+        Pos ttt;
+        ttt.x = g::CurrentPosition1;
+        ttt.y = g::CurrentPosition2;
+        ttt.z = g::CurrentPosition3;
+        platposvec.push_back(ttt);
+    }
 }
 
 void ControlView::PositionControl()
@@ -761,5 +826,38 @@ void ControlView::on_isRec_stateChanged(int arg1)
     else{
         datarecording = false;
         std::cout << "DO NOT RECORD DATA" << std::endl;
+    }
+}
+
+void ControlView::on_saveBtn_clicked()
+{
+    int m = xsensdatavec.size();
+    if(m != 0){
+        NBaseToastr * msg = new NBaseToastr(this, "请保存数据");
+        msg->toastr();
+
+        QString fileName = QFileDialog::getSaveFileName(this,QString::fromLocal8Bit("Save Files"),"",tr("TXT Files(*.txt);;All Files(*.*)"));
+        if(!fileName.isNull()){
+            int i=0;
+            QFile data(fileName);
+            if(data.open(QFile::WriteOnly | QFile::Truncate | QFile::Text)){
+                QTextStream out(&data);
+                out << "xsens.roll" << "," << "xsens.pitch" << "," << "xsens.yaw" << ","
+                    << "keller.deep" << ","
+                    << "plat.x" << "," <<"plat.y" << "," <<"plat.z" << ","
+                    << "ctrl.fx" << "," << "ctrl.fy" << "," << "ctrl.fz" << "," << "ctrl.tx" << "," << "ctrl.ty" << "," << "ctrl.tz" << "\n";
+
+                for(i;i<m;i++){
+                    out << xsensdatavec[i].roll << "," <<  xsensdatavec[i].pitch << "," << xsensdatavec[i].yaw << ","
+                        << kellerdatavec[i] << ","
+                        << platposvec[i].x << "," << platposvec[i].y << "," << platposvec[i].z << ","
+                        << ctrldatavec[i].fx << "," << ctrldatavec[i].fy << "," << ctrldatavec[i].fz << "," << ctrldatavec[i].tx << "," << ctrldatavec[i].ty << "," << ctrldatavec[i].tz << "\n";
+                }
+            }
+        }
+    }
+    else{
+        NBaseToastr * msg = new NBaseToastr(this, "未记录到任何数据");
+        msg->toastr();
     }
 }

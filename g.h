@@ -101,6 +101,23 @@ struct RECAltData
   float alt2_correlation;
 };
 
+struct RECCtrlData
+{
+  float fx;
+  float fy;
+  float fz;
+  float tx;
+  float ty;
+  float tz;
+};
+
+struct Pos
+{
+  float x;
+  float y;
+  float z;
+};
+
 
 class g
 {

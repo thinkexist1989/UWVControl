@@ -1,6 +1,6 @@
 #include "platformview.h"
 #include "ui_platformview.h"
-#include "g.h"
+
 #include <nbasetoastr.h>
 
 

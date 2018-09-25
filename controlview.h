@@ -6,6 +6,9 @@
 #include <QTimer>
 #include <PID.h>
 
+#include <QFileDialog>
+#include <QFileInfo>
+
 namespace Ui {
 class ControlView;
 }
@@ -55,6 +58,8 @@ public:
     std::vector<RECXsensData> xsensdatavec;
     std::vector<float> kellerdatavec;
     std::vector<RECAltData> altdatavec;
+    std::vector<RECCtrlData> ctrldatavec;
+    std::vector<Pos> platposvec;
 
 private:
     Ui::ControlView *ui;
@@ -91,6 +96,7 @@ private slots:
     void on_mpidBtn_clicked();
     void on_smcBtn_clicked();
     void on_isRec_stateChanged(int arg1);
+    void on_saveBtn_clicked();
 };
 
 #endif // CONTROLVIEW_H

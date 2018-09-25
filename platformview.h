@@ -11,13 +11,8 @@
 #include "interpolation.h"
 #include <pthread.h>
 #include <QTimer>
-struct Pos
-{
-  float x;
-  float y;
-  float z;
-};
 
+#include "g.h"
 
 namespace Ui {
 class PlatformView;
