@@ -302,7 +302,7 @@ Vector3f ControlView::GetCG()
     float xc = 0.0735; float yc = 0.0445; float zc = 0.228;
     float mx = 4; float my = 4; float mz = 2; float mr = 90.336;
     float iy = 0; float jy = 0; float ky = -0.1;
-    float X = g::CurrentPosition1; float Y = g::CurrentPosition2; float Z = g::CurrentPosition3;
+    float X = -g::CurrentPosition2; float Y = g::CurrentPosition1; float Z = g::CurrentPosition3;
     ryG << iy  ,    jy, ky;
     rxG << iy  ,  Y+jy, ky+(xc+yc)/2;
     rzG << X+iy,  Y+jy, ky+xc+(yc+zc)/2;
@@ -619,18 +619,19 @@ void ControlView::OrientationControl()
         Vector6f derror;
         derror << 0, 0, (g::ddeep - 0), (g::droll- 0), (g::dpitch-0), 0;
         Vector6f error;
-        error << 0,0,(g::deep - ui->z_ctrl->value()), (g::roll- ui->roll_ctrl->value()), (g::pitch-ui->pitch_ctrl->value()), 0;
+        error << 0,0,(g::deep - ui->z_ctrl->value()*1000), (g::roll- ui->roll_ctrl->value()), (g::pitch-ui->pitch_ctrl->value()), 0;
 
 //        float PVAL = -10;
 //        float DVAL = -2;
-        Vector6f PVAL; PVAL << -10,-10,-10,-10,-10,-10;
-        Vector6f DVAL; DVAL << -2,-2,-2,-2,-2,-2;
+        Vector6f PVAL; PVAL << -0.3,-0.3,-0.05,-0.05,-0.05,-0.3;
+        Vector6f DVAL; DVAL << -1,-1,-1,-1,-1,-1;
 
         Vector6f tau;
         Vector6f GG = -GetG(g::roll,g::pitch);
 
         for(int i = 0; i<6;i++){
-            tau(i) = GG(i) + PVAL(i)*error(i)+DVAL(i)*derror(i);
+            //tau(i) = GG(i) + PVAL(i)*error(i)+DVAL(i)*derror(i);
+            tau(i) = GG(i)+PVAL(i)*error(i);
         }
       //  tau = -GetG(g::roll,g::pitch)+ PVAL*error+DVAL*derror;
 
@@ -641,6 +642,8 @@ void ControlView::OrientationControl()
         g::Tx = tau(3);
         g::Ty = tau(4);
         g::Tz = tau(5);
+
+        std::cout << "MPID is: "<<tau << std::endl;
     }
         break;
     case CTRL_SMC:{
@@ -657,12 +660,12 @@ void ControlView::OrientationControl()
         }
 
         Vector6f tau;
-        Vector6f e; e << 10,10,10,10,10,10;
+        Vector6f e; e << 0.6,0.6,0.6,0.6,0.6,0.6;
         Vector6f k; k << 0.1,0.1,0.1,0.1,0.1,0.1;
         Vector6f GG = -GetG(g::roll,g::pitch);
 
         for(int i = 0; i<6;i++){
-            tau(i) = GG(i) - e(i)*ss(i)/abs(ss(i)) - k(i)*ss(i)/abs(ss(i));
+            tau(i) = GG(i) - e(i)*(ss(i)+0.01)/(abs(ss(i))+0.01) - k(i)*(ss(i)+0.01)/(abs(ss(i))+0.01);
         }
 
         g::Fx = tau(0);
@@ -671,6 +674,8 @@ void ControlView::OrientationControl()
         g::Tx = tau(3);
         g::Ty = tau(4);
         g::Tz = tau(5);
+
+        std::cout << "SMC is: "<<tau << std::endl;
     }
         break;
     default:

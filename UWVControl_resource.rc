@@ -4,7 +4,7 @@
 #  include <winver.h>
 # endif
 
-IDI_ICON1	ICON	DISCARDABLE	"C:/Users/Think/Documents/UWVControl/res/control.ico"
+IDI_ICON1	ICON	DISCARDABLE	"C:/Users/Administrator/Desktop/UWVControl/res/control.ico"
 
 VS_VERSION_INFO VERSIONINFO
 	FILEVERSION 0,0,0,0
